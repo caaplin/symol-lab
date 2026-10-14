@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AquaAlert - farmer alert screen</title>
+<style>
+  :root{
+    --green:#0f9d58; --yellow:#f4b400; --orange:#f36c21; --red:#d93025;
+    --ink:#10241a; --paper:#f4f7f4; --card:#ffffff; --line:#e2e8e2; --muted:#5b6b60;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(160deg,#0d2b1e,#11412c 60%,#0d2b1e);
+       font-family:"Segoe UI",system-ui,-apple-system,"Noto Sans",Arial,sans-serif;
+       color:var(--ink);display:flex;justify-content:center;padding:24px 12px;min-height:100vh}
+  .wrap{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  /* ---------- phone ---------- */
+  .phone{width:392px;background:#0a1f16;border-radius:38px;padding:12px;
+         box-shadow:0 30px 60px rgba(0,0,0,.55);border:1px solid #1d4b34}
+  .screen{background:var(--paper);border-radius:30px;overflow:hidden;height:760px;display:flex;flex-direction:column}
+  .status{display:flex;justify-content:space-between;font-size:11px;padding:8px 18px;color:#e8f3ec;background:#0a1f16}
+  .appbar{padding:12px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+  .appbar b{font-size:17px;letter-spacing:.2px}
+  .chip{font-size:11px;background:#e6efe8;border:1px solid var(--line);border-radius:20px;padding:4px 9px;color:var(--muted)}
+  .body{padding:0 14px 14px;overflow:auto;flex:1}
+  /* ---------- verdict card ---------- */
+  .verdict{border-radius:20px;padding:16px;color:#fff;position:relative;overflow:hidden}
+  .verdict .big{font-size:22px;font-weight:700;line-height:1.2;margin:2px 0 4px}
+  .verdict .loc{font-size:14px;opacity:.95}
+  .verdict .meta{font-size:11px;opacity:.85;margin-top:8px}
+  .v-green{background:linear-gradient(135deg,#0f9d58,#0b7a43)}
+  .v-yellow{background:linear-gradient(135deg,#f4b400,#c98f00);color:#2a2200}
+  .v-orange{background:linear-gradient(135deg,#f36c21,#c2390c)}
+  .v-red{background:linear-gradient(135deg,#d93025,#8f1209)}
+  .pulse{position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;
+         background:rgba(255,255,255,.10)}
+  /* ---------- cards ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-top:12px}
+  .card h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  ol.actions{margin:0;padding-left:20px}
+  ol.actions li{margin:0 0 9px;font-size:14px;line-height:1.35}
+  .kn{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:0}
+  .ok{color:var(--green)} .wa{color:#b58900} .ac{color:var(--orange)} .cr{color:var(--red)}
+  .bar{height:7px;border-radius:5px;background:#eef1ee;overflow:hidden;margin-top:5px}
+  .bar > i{display:block;height:100%}
+  .nights{display:flex;gap:8px}
+  .night{flex:1;border-radius:12px;padding:9px 8px;text-align:center;color:#fff;font-size:11px;line-height:1.35}
+  .sms{background:#0f2a1c;color:#d7f2df;border-radius:12px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5}
+  .src{font-size:11.5px;color:var(--muted);line-height:1.6}
+  .src a{color:#1c6b46}
+  button.act{margin-top:10px;width:100%;padding:11px;border:0;border-radius:12px;background:#124e33;color:#fff;font-size:14px;font-weight:600}
+  /* ---------- side panel ---------- */
+  .side{width:430px;color:#dff0e5;font-size:13.5px;line-height:1.6}
+  .side h1{color:#fff;font-size:24px;margin:0 0 6px}
+  .side h2{color:#9fe0bb;font-size:14px;text-transform:uppercase;letter-spacing:.09em;margin:22px 0 8px}
+  .side li{margin-bottom:7px}
+  .tag{display:inline-block;font-size:11px;background:#164430;color:#a9e6c3;border-radius:20px;padding:3px 9px;margin:0 4px 4px 0}
+  table.t{border-collapse:collapse;width:100%;font-size:12.5px}
+  table.t td,table.t th{border-bottom:1px solid #1e4c35;padding:6px 6px;text-align:left;vertical-align:top}
+  table.t th{color:#9fe0bb;font-weight:600}
+  .foot{margin-top:20px;font-size:11.5px;color:#8fbfa4}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ================= PHONE ================= -->
+  <div class="phone">
+    <div class="status"><span>MTNL 4G</span><span id="clock">05:42</span><span>82%</span></div>
+    <div class="appbar">
+      <div><b>AquaAlert</b><div class="chip" style="margin-top:5px">Pond KA-BLR-001 &middot; Rohu</div></div>
+      <button class="chip" id="lang" style="cursor:pointer">ಕನ್ನಡ</button>
+    </div>
+    <div class="screen"><div class="body">
+      <div class="verdict v-red" id="verdict">
+        <div class="pulse"></div>
+        <div style="font-size:11px;letter-spacing:.14em">EMERGENCY &middot; 07 OCT, 05:30</div>
+        <div class="big" data-en="EMERGENCY - fish may die" data-kn="ತುರ್ತು - ಮೀನು ಸಾಯಬಹುದು">EMERGENCY - fish may die</div>
+        <div class="loc" data-en="Dissolved oxygen 1.6 mg/L at dawn. This is the kill window." data-kn="ಮುಂಜಾನೆ ಆಮ್ಲಜನಕ 1.6 ಮಿಗ್ರಾ/ಲೀ. ಈಗಲೇ ಕ್ರಮ ತಗೊಳ್ಳಿ.">Dissolved oxygen 1.6 mg/L at dawn. This is the kill window.</div>
+        <div class="meta" data-en="risk score 0.93 &middot; data: morning test strip + Open-Meteo night forecast" data-kn="ಅಪಾಯ ಅಂಕ 0.93 &middot; ಮಾಹಿತಿ: ಬೆಳಗಿನ ಪರೀಕ್ಷೆ + ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ">risk score 0.93 &middot; data: morning test strip + Open-Meteo night forecast</div>
+      </div>
+
+      <div class="card">
+        <h3 data-en="Do these now, in this order" data-kn="ಈಗ ಈ ಕ್ರಮ ತಗೊಳ್ಳಿ">Do these now, in this order</h3>
+        <ol class="actions" id="actions">
+          <li data-en="Turn on the aerator / paddle wheel NOW and keep it running until sunrise." data-kn="ಈಗಲೇ ಏರೇಟರ್ ಆನ್ ಮಾಡಿ, ಸೂರ್ಯೋದಯದವರೆಗೆ ಚಾಲು ಮಾಡಿ.">Turn on the aerator / paddle wheel NOW and keep it running until sunrise.</li>
+          <li data-en="Do NOT feed today - uneaten feed eats your oxygen." data-kn="ಇಂದು ಆಹಾರ ಕೊಡಬೇಡಿ - ಉಳಿದ ಆಹಾರ ಆಮ್ಲಜನಕ ತಿನ್ನುತ್ತದೆ.">Do NOT feed today - uneaten feed eats your oxygen.</li>
+          <li data-en="Exchange 20-30% water with clean water before 09:00." data-kn="ಬೆಳಿಗ್ಗೆ 9 ಗಂಟೆ ಮೊದಲು 20-30% ನೀರು ಬದಲಾಯಿಸಿ.">Exchange 20-30% water with clean water before 09:00.</li>
+          <li data-en="Catch 3 fish, check gills and skin, send one photo here." data-kn="3 ಮೀನು ಪರೀಕ್ಷಿಸಿ, ಫೋಟೋ ಇಲ್ಲಿ ಕಳಿಸಿ.">Catch 3 fish, check gills and skin, send one photo here.</li>
+          <li data-en="Call the fisheries extension officer (tap to dial)." data-kn="ಮೀನುಗಾರಿಕೆ ಅಧಿಕಾರಿಗೆ ಕರೆ ಮಾಡಿ.">Call the fisheries extension officer (tap to dial).</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h3 data-en="Why - what the system saw" data-kn="ಏಕೆ - ಸಿಸ್ಟಂ ಏನು ಕಂಡಿತು">Why - what the system saw</h3>
+        <div class="row"><span>Dissolved oxygen 1.6 mg/L <span class="kn" data-en="minimum for rohu is 3.0" data-kn="ರೋಹುಗೆ ಕನಿಷ್ಠ 3.0">minimum for rohu is 3.0</span></span><span class="cr">CRITICAL</span></div>
+        <div class="bar"><i style="width:93%;background:var(--red)"></i></div>
+        <div class="row"><span>Total ammonia 1.9 mg/L &rarr; toxic NH&#8323; 0.85 mg/L <span class="kn" data-en="toxic fraction derived from a ₹15 test strip + pH + temperature" data-kn="₹15 ಸ್ಟ್ರಿಪ್ + pH + ಉಷ್ಣತೆಯಿಂದ ಲೆಕ್ಕ">toxic fraction derived from a ₹15 test strip + pH + temperature</span></span><span class="cr">CRITICAL</span></div>
+        <div class="bar"><i style="width:88%;background:var(--red)"></i></div>
+        <div class="row"><span>Night forecast: 34&deg;C, wind 0.8 m/s, no rain</span><span class="ac">ACT</span></div>
+        <div class="bar"><i style="width:64%;background:var(--orange)"></i></div>
+        <div class="row"><span>pH 8.9 (high pH makes ammonia 6&times; more toxic)</span><span class="wa">WATCH</span></div>
+        <div class="bar"><i style="width:41%;background:var(--yellow)"></i></div>
+      </div>
+
+      <div class="card">
+        <h3 data-en="Next 3 nights" data-kn="ಮುಂದಿನ 3 ರಾತ್ರಿ">Next 3 nights</h3>
+        <div class="nights">
+          <div class="night" style="background:var(--red)">Tonight<br><b>RED</b><br>hot, still<br>no rain</div>
+          <div class="night" style="background:var(--orange)">Tomorrow<br><b>ORANGE</b><br>cloud 20%<br>wind 1.2</div>
+          <div class="night" style="background:var(--green)">Day 3<br><b>GREEN</b><br>rain 18 mm<br>cooler</div>
+        </div>
+        <div class="src" style="margin-top:9px" data-en="Built from Open-Meteo hourly forecast (free, no key). This warning arrives ~14 hours before the kill window - the whole point of the system." data-kn="Open-Meteo ಮುನ್ಸೂಚನೆಯಿಂದ. ಸಾವಿನ ಸಮಯಕ್ಕಿಂತ 14 ಗಂಟೆ ಮೊದಲೇ ಎಚ್ಚರಿಕೆ.">Built from Open-Meteo hourly forecast (free, no key). This warning arrives ~14 hours before the kill window - the whole point of the system.</div>
+      </div>
+
+      <div class="card">
+        <h3 data-en="What the farmer receives without a smartphone" data-kn="ಸ್ಮಾರ್ಟ್‌ಫೋನ್ ಇಲ್ಲದವರಿಗೆ ಸಿಗುವ ಸಂದೇಶ">What the farmer receives without a smartphone</h3>
+        <div class="sms">AQUAEMERGENCY Pond KA-BLR-001 07-Oct 05:30 score 0.93. Turn on aerator NOW, stop feed. Call 080-XXXXXXX.</div>
+        <div class="src" style="margin-top:8px">English/transliterated SMS fits one GSM part (160 chars). The Kannada version goes out as a 20-second IVR voice call, because Kannada SMS needs UCS-2 and costs 3&times; per message.</div>
+        <button class="act">📞 Listen in Kannada &nbsp;&middot;&nbsp; ವಾಯ್ಸ್ ಸಂದೇಶ ಕೇಳಿ</button>
+      </div>
+
+      <div class="card">
+        <h3 data-en="Send a photo of a sick fish" data-kn="ಅನಾರೋಗ್ಯ ಮೀನಿನ ಫೋಟೋ ಕಳಿಸಿ">Send a photo of a sick fish</h3>
+        <div class="src">Last triage: <b>Bacterial Red disease</b> (0.78) &middot; trained on public images from South-Asia and Nile-tilapia datasets. Advice: isolate pond, stop feeding, call extension officer - do not self-dose antibiotics.</div>
+        <button class="act" style="background:#d93025">📷 Take photo &nbsp;&middot;&nbsp; ಫೋಟೋ ತೆಗೆಯಿರಿ</button>
+      </div>
+
+      <div class="card">
+        <h3 data-en="Data used for this verdict" data-kn="ಬಳಸಿದ ಮಾಹಿತಿ">Data used for this verdict</h3>
+        <div class="src">
+          &bull; Open-Meteo archive/forecast API (CC BY 4.0) - air temp, wind, rain, cloud<br>
+          &bull; FAO x6709e + AC175E18 - DO minima and ammonia chemistry<br>
+          &bull; Kaggle aquaponics pond datasets - tropical diurnal DO curve<br>
+          &bull; Kaggle Freshwater Fish Disease (CC0) - photo model<br>
+          <span style="color:#8aa696">No sensor was purchased for this alert.</span>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ================= SIDE PANEL ================= -->
+  <div class="side">
+    <h1>AquaAlert - the 30-second version</h1>
+    <p>Small farms lose a season's income in one bad night. Big companies see it coming through
+    probes and lab tests; a 1-hectare farm cannot. This screen shows the verdict, <b>why</b>,
+    and the one action that matters - at 05:30, in the farmer's own language.</p>
+
+    <h2>How it works without sensors</h2>
+    <ul>
+      <li><b>Free weather API = the oxygen sensor.</b> Hot, still, rainless nights drive pre-dawn
+      dissolved-oxygen crashes. Open-Meteo gives us that for free, globally, no key.</li>
+      <li><b>₹15 ammonia strip + pH + thermometer = the ammonia photometer.</b> We convert total
+      ammonia into toxic NH<sub>3</sub> with the FAO/Emerson pH-temperature model.</li>
+      <li><b>Public pond datasets = the baselines.</b> IoT pond datasets give the normal diurnal
+      shape; the pond's own history gives the drift alarm.</li>
+      <li><b>Public fish photos = the vet.</b> 2,444 CC0 South-Asia images + 1,043 annotated
+      tilapia images train the photo triage.</li>
+    </ul>
+
+    <h2>Alert escalation</h2>
+    <table class="t">
+      <tr><th>Band</th><th>Channel &amp; timing</th></tr>
+      <tr><td style="color:#6ddc9c">GREEN</td><td>App only (and silence - never spend an SMS on good news)</td></tr>
+      <tr><td style="color:#ffd54f">YELLOW</td><td>SMS, once per 6 h, + cooperative dashboard</td></tr>
+      <tr><td style="color:#ff9e5e">ORANGE</td><td>SMS + Kannada IVR call + photo request</td></tr>
+      <tr><td style="color:#ff8a80">RED</td><td>SMS + IVR + extension officer paged, re-check every 6 h</td></tr>
+    </table>
+
+    <h2>Cost per farm</h2>
+    <div>
+      <span class="tag">Verdict ~₹0</span>
+      <span class="tag">SMS ~₹0.15</span>
+      <span class="tag">IVR ~₹0.60</span>
+      <span class="tag">ammonia strip ~₹15/test</span>
+      <span class="tag">hardware optional</span>
+    </div>
+    <p style="font-size:12.5px;color:#9dc9ae">Optional upgrade path: ₹700 ESP32 + DS18B20 + pH
+    module feeds the same API - the system is designed so hardware can be added later without
+    changing the farmer's screen.</p>
+
+    <div class="foot">Sources: FAO x6709e ch.2.5 &amp; AC175E18 ch.18 (ammonia chemistry) &middot;
+    eXtension/SRAC water-quality table &middot; El-Sherif &amp; El-Feky 2008 via PMC9640449 &middot;
+    Open-Meteo (CC BY 4.0) &middot; Kaggle aquaponics pond datasets &middot;
+    Kaggle Freshwater Fish Disease South Asia (CC0) &middot; Nile Tilapia NTD-1 &middot;
+    USGS/EPA Water Quality Portal &middot; CPCB NWMP via OpenCity.<br>
+    Multi-band risk fusion: worst-parameter escalation with weighted score tie-break;
+    drift via MAD robust z-scores on the pond's own 14-day baseline.</div>
+  </div>
+</div>
+<script>
+  const btn = document.getElementById('lang');
+  let kn = false;
+  btn.addEventListener('click', () => {
+    kn = !kn;
+    btn.textContent = kn ? 'English' : 'ಕನ್ನಡ';
+    document.querySelectorAll('[data-en]').forEach(el => {
+      const t = el.dataset[kn ? 'kn' : 'en'];
+      if (t) el.innerHTML = t;
+    });
+  });
+  // live clock in the phone status bar
+  const tick = () => {
+    const d = new Date();
+    document.getElementById('clock').textContent =
+      String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  };
+  tick(); setInterval(tick, 20000);
+</script>
+</body>
+</html>
